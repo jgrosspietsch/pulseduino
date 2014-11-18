@@ -1,6 +1,6 @@
 # Vim files
-.swp
-.vim
+*.swp
+*.vim
 
 # Files rendered at runtime.
 server/tmp/*
