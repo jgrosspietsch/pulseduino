@@ -1,5 +1,10 @@
+# Vim files
 .swp
 .vim
+
+# Files rendered at runtime.
+server/tmp/*
+
 # Logs
 logs
 *.log
