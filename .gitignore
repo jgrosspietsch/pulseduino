@@ -4,6 +4,8 @@
 
 # Files rendered at runtime.
 server/tmp/*
+server/static/snake.css
+server/static/snake.js
 
 # Logs
 logs
