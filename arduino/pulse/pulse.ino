@@ -7,8 +7,8 @@ This code detects heartbeats and writes a line of text to the serial port to ind
 */
 
 //Constants (pins)
-#define pulse_pin 0 // Pulse sensor signal wire is connected to analog pin 0.
-#define blink_pin 13 // Pin blinks on-board LED to indicate a heartbeat.
+#define PULSE_PIN 0 // Pulse sensor signal wire is connected to analog pin 0.
+#define BLINK_PIN 13 // Pin blinks on-board LED to indicate a heartbeat.
 
 // Volatile variables used by interrupts.
 volatile int signal;                       // Holds raw input data.
@@ -33,7 +33,7 @@ void interruptSetup(){
 ISR(TIMER2_COMPA_vect){
   cli(); // Diable interrupts.
   
-  signal = analogRead(pulse_pin);
+  signal = analogRead(PULSE_PIN);
   int n = millis() - last_beat_time;
   
   // Record data pertaining to the current heartbeat.
@@ -54,8 +54,8 @@ ISR(TIMER2_COMPA_vect){
     // 250 is a resonable interval requirement to prevent noise.
     if (signal > thresh && pulse == false) {
       pulse = true;
-      Serial.println("beat");
-      digitalWrite(blink_pin, HIGH);
+      Serial.print("beat");
+      digitalWrite(BLINK_PIN, HIGH);
       ibi = n;
       last_beat_time = millis();
       
@@ -70,7 +70,7 @@ ISR(TIMER2_COMPA_vect){
   
   if (signal < thresh && pulse == true) {
     // Heartbeat is over, record its data.
-    digitalWrite(blink_pin, LOW);
+    digitalWrite(BLINK_PIN, LOW);
     pulse = false;
     amp = p - t;
     thresh = amp/2 + t;
@@ -82,7 +82,7 @@ ISR(TIMER2_COMPA_vect){
 }
 
 void setup(){
-  pinMode(blink_pin, OUTPUT);
+  pinMode(BLINK_PIN, OUTPUT);
   Serial.begin(115200);
   last_beat_time = millis();
   interruptSetup();
