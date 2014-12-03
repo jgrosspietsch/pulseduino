@@ -2,18 +2,16 @@
 
 express = require 'express'
 app = express()
-server = (require 'http').Server(app)
+server = (require 'http').Server app
+socketio = require 'socket.io'
+io = socketio server
 SerialPort = (require 'serialport').SerialPort
-Server = require 'socket.io'
 
-# Bind port 8080
+# Setup static web server and bind to port 8080
 app.use (express.static (__dirname + '/../static'))
-
 server.listen 8080
 
-# Bind socket.io to server
-io = new Server server
-
+# Serial port setup
 serialPort =
   new SerialPort process.argv[process.argv.length - 1], baudrate : 115200, false
 
@@ -29,7 +27,7 @@ serialPort.open (error) ->
       # and direct socket.io to emit a message
       # to all open browsers.
 
-      io.emit (data.toString 'ascii')
+      io.emit ('beat')
       console.log (data.toString 'ascii')
 
     serialPort.on 'close', () ->
