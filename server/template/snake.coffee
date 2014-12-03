@@ -1,148 +1,162 @@
-# Game logic
-
 # Tile state enum
-tilestates =
-  NONE: 0
-  HEAD: 1
-  TAIL: 2
-  FOOD: 3
 
-# Direction enum
+tilesstyles =
+  NONE: 'url("img/none.png")'
+  HEADUP: 'url("img/headup.png")'
+  HEADDOWN: 'url("img/headdown.png")'
+  HEADLEFT: 'url("img/headleft.png")'
+  HEADRIGHT: 'url("img/headright.png")'
+  TAIL: 'url("img/tail.png")'
+  FOOD: 'url("img/food.png")'
+
+# Directions enum
+
 directions =
   UP: 0
   DOWN: 1
   LEFT: 2
   RIGHT: 3
 
-# Container class for tiles and their states
-class Tile
-  constructor: ->
-    @state = tilestates.NONE
+snake = angular.module 'pulseduino', []
 
-# Board class
-class Board
-  constructor: ->
-    # Fill board
-    @tiles = for x in [0...4]
-      for y in [0...4]
-        new Tile
+snake.controller 'SnakeController',['$scope', ($scope) ->
+  $scope.tiles = []
+  for i in [0..24]
+    $scope.tiles[i] = tilesstyles.NONE
 
-    # Decide starting place
-    rand = Math.floor (Math.random * 100)
-    x = (rand / 10) / 2
-    y = (rand % 10) / 2
-    @snake = []
-    @snake.push [x, y]
-    @tiles[x][y].state = tilestates.HEAD
-
-    # Determine ideal starting direction (left or right, default left)
-    if x < 3
-      @direction = directions.RIGHT
-    else
-      @direction = directions.LEFT
-
-    populatefood
-
-  # Move head of snake. If grow is false, the very end is removed.
-  move: =>
-    if @direction in directions and @dead is false
-      newhead = []
-
-      # Get hypothetical new head coords
-      if @direction is directions.UP
-        newhead = [@snake[0][0], @snake[0][1] - 1]
-      else if @direction is directions.DOWN
-        newhead = [@snake[0][0], @snake[0][1] + 1]
-      else if @direction is directions.LEFT
-        newhead = [@snake[0][0] - 1, @snake[0][1]]
-      else if @direction is directions.RIGHT
-        newhead = [@snake[0][0] + 1, @snake[0][1]]
-
-      # Ensure next tile is within bounds
-      if newhead[0] < 0 or newhead[0] > 4 or newhead[1] < 0 or newhead[1] > 4
-        @dead = true
-      else if @tiles[newhead[0]][newhead[1]].state is tilestates.TAIL
-        @dead = true
-      else if @tiles[newhead[0]][newhead[1]].state is tilestates.HEAD
-        @dead = true
-      else
-
-        # Pop end of snake if grow is false, and
-        # make sure it knows whether to do this on the next move.
-        if @grow is false
-          endx = @snake[@snake.length - 1][0]
-          endy = @snake[@snake.length - 1][1]
-          @tiles[endx][endy].state = tilestates.NONE
-          @snake.pop
-
-        newfood = false
-
-        if @tiles[newhead[0]][newhead[1]].state is tilestates.FOOD
-          @grow = true
-          newfood = true
-        else
-          @grow = false
-
-        @tiles[newhead[0]][newhead[1]].state = tilestates.HEAD
-        @tiles[snake[0][0]][snake[0][1]].state = tilestates.TAIL
-
-        snake.unshift [newhead[0], newhead[1]]
-
-        if newfood
-          populatefood
-
-  # Called when the food on the board has been
-  # eaten and needs to be repopulated.
-  populatefood: =>
-    while true
-      rand = Math.floor (Math.random * 100)
-      x = (rand / 10) / 2
-      y = (rand % 10) / 2
-      if @tiles[x][y].state is tilestates.NONE
-        @tiles[x][y].state = tilestates.FOOD
-        break
-
-SnakeViewModel =
-  start: =>
-    if @board is undefined or @board == null or @board.dead
-      @board = new Board
-
-  stateImage: ko.computed (x, y) ->
-    if @board.tiles[x][y] is tilestates.NONE
-      'url("img/none.png")'
-    else if @board.tiles[x][y] is tilestates.TAIL
-      'url("img/tail.png")'
-    else if @board.tiles[x][y] is tilestates.FOOD
-      'url("img/food.png")'
-    else if @board.tiles[x][y] is tilestates.HEAD
-      if @board.direction is directions.UP
-        'url("img/headup.png")'
-      else if @board.direction[x][y] is directions.DOWN
-        'url("img/headdown.png")'
-      else if @board.direction[x][y] is directions.LEFT
-        'url("img/headleft.png")'
-      else if @board.direction[x][y] is directions.RIGHT
-        'url("img/headright.png")'
-
-  deadOpacity: ko.computed ->
-    if @board.dead
+  $scope.dead = true
+  $scope.overlayopacity = ->
+    if $scope.dead is true
       '0.8'
     else
       '0.0'
+  $scope.snake = []
+  $scope.direction = directions.LEFT
+  $scope.socket = null
 
-$(document).keydown (event) ->
-  if event.which is 32
-    # Space bar starts the game.
-    SnakeViewModel.start
-  else if event.which is 38
-    # Up movement
-    SnakeViewModel.board.direction = directions.UP
-  else if event.which is 40
-    # Down movement
-    SnakeViewModel.board.direction = directions.DOWN
-  else if event.which is 37
-    # Left movement
-    SnakeViewModel.board.direction = directions.LEFT
-  else if event.which is 39
-    # Right movement
-    SnakeViewModel.board.direction = directions.RIGHT
+  $scope.getTile = (n) ->
+    return $scope.tiles[n]
+
+  $scope.initBoard = ->
+    if $scope.dead is true
+      for i in [0..24]
+        $scope.tiles[i] = tilesstyles.NONE
+
+      $scope.snake = []
+
+      n = Math.floor (Math.random() * 25)
+      x = n % 5
+
+      $scope.snake.push n
+
+      if x < 3
+        $scope.direction = directions.RIGHT
+        $scope.tiles[n] = tilesstyles.HEADRIGHT
+      else
+        $scope.direction = directions.LEFT
+        $scope.tiles[n] = tilesstyles.HEADLEFT
+
+      $scope.populateFood()
+      $scope.dead = false
+      return
+
+  $scope.populateFood = ->
+    while true
+      n = Math.floor (Math.random() * 25)
+      if $scope.tiles[n] is tilesstyles.NONE
+        $scope.tiles[n] = tilesstyles.FOOD
+        return
+
+  $scope.move = ->
+    if $scope.dead is false
+      currentn = $scope.snake[0]
+      currentx = currentn % 5
+      currenty = Math.floor(currentn / 5)
+
+      if $scope.direction is directions.UP and currenty < 1
+        $scope.dead = true
+      else if $scope.direction is directions.DOWN and currenty > 3
+        $scope.dead = true
+      else if $scope.direction is directions.LEFT and currentx < 1
+        $scope.dead = true
+      else if $scope.direction is directions.RIGHT and currentx > 3
+        $scope.dead = true
+      else
+        # Head appears to be able to stay within bounds
+        newx = currentx
+        newy = currenty
+
+        if $scope.direction is directions.UP
+          newy--
+        else if $scope.direction is directions.DOWN
+          newy++
+        else if $scope.direction is directions.LEFT
+          newx--
+        else if $scope.direction is directions.RIGHT
+          newx++
+
+        newn = newx + (newy * 5)
+
+        if $scope.tiles[newn] is tilesstyles.TAIL
+          $scope.dead = true
+        else
+          grow = false
+          if $scope.tiles[newn] is tilesstyles.FOOD
+            grow = true
+          $scope.snake.unshift newn
+          $scope.tiles[$scope.snake[1]] = tilesstyles.TAIL
+
+          # Set head tile
+          if $scope.direction is directions.UP
+            $scope.tiles[newn] = tilesstyles.HEADUP
+          else if $scope.direction is directions.DOWN
+            $scope.tiles[newn] = tilesstyles.HEADDOWN
+          else if $scope.direction is directions.LEFT
+            $scope.tiles[newn] = tilesstyles.HEADLEFT
+          else if $scope.direction is directions.RIGHT
+            $scope.tiles[newn] = tilesstyles.HEADRIGHT
+
+          if grow is false
+            $scope.tiles[$scope.snake.pop()] = tilesstyles.NONE
+          else
+            $scope.populateFood()
+    return
+
+  $scope.onKeydown = ($event) ->
+    kc = $event.keyCode
+    if kc is 32 and $scope.dead is true
+      # Space bar to start game
+      # (Only allow this input if game is dead.)
+      $scope.initBoard()
+    else if $scope.dead is false
+      # Only allow direction input if the game is not dead
+      if kc is 38
+        # Up arrow
+        $scope.direction = directions.UP
+        $scope.tiles[$scope.snake[0]] = tilesstyles.HEADUP
+      else if kc is 40
+        # Down arrow
+        $scope.direction = directions.DOWN
+        $scope.tiles[$scope.snake[0]] = tilesstyles.HEADDOWN
+      else if kc is 37
+        # Left arrow
+        $scope.direction = directions.LEFT
+        $scope.tiles[$scope.snake[0]] = tilesstyles.HEADLEFT
+      else if kc is 39
+        # Right arrow
+        $scope.direction = directions.RIGHT
+        $scope.tiles[$scope.snake[0]] = tilesstyles.HEADRIGHT
+    return
+
+  $scope.connectSocket = ->
+    $scope.socket = io.connect location.origin
+    $scope.socket.on 'beat', (data) ->
+      console.log('beat received')
+      if $scope.dead is false
+        $scope.move()
+        $scope.$apply()
+      return
+    return
+
+  return
+]
