@@ -21,6 +21,7 @@ Hardware:
 ## Setup
 
 To run locally:
+
 1. Clone repo.
 2. Load `arduino/pulse.ino` onto an Arduino. The `interruptSetup()` varibles are registers and their assigned values will work only on ATMega328 and 16Mhz Arduino hardware, such as the Arduino Uno. For more information, look [here](https://pulsesensor.myshopify.com/pages/pulse-sensor-amped-arduino-v1dot1).
 3. Run `npm install` inside of the `server/` directory.
